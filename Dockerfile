@@ -1,7 +1,10 @@
-FROM ghcr.io/distroless/busybox:latest
+FROM golang:1.18-alpine AS go-builder
+COPY ./ /circleci-exporter
+WORKDIR /circleci-exporter
+RUN go mod download
+RUN GOOS=linux go build -o exporter .
 
-COPY circleci-exporter /bin/circleci-exporter
-
-USER nobody
-ENTRYPOINT ["/bin/circleci-exporter"]
-EXPOSE     9101
+FROM alpine
+EXPOSE 9888
+COPY --from=go-builder /circleci-exporter/exporter /exporter
+ENTRYPOINT ["/exporter"]
